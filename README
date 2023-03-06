@@ -1,5 +1,8 @@
 #Anghel Andrei - Stelian, 312CA
 
+INTRODUCERE:
+	Am realizat un editor de imagini ce permite utilizatorului sa efectueze
+actiuni precum rotirea, scalarea, oglindirea si aplicarea unor filtre.
 
 IDEE:
 	Formatul NetPBM permite stocarea cu usurinta a datelor ce alcatuiesc o
