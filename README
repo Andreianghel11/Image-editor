@@ -1,0 +1,213 @@
+#Anghel Andrei - Stelian, 312CA
+
+
+IDEE:
+	Formatul NetPBM permite stocarea cu usurinta a datelor ce alcatuiesc o
+imaginea intr-o matrice tip UNSIGNED CHAR, cat timp valoarea maxima a
+culorilor nu depaseste 256 (asa cum se intampla in problema data).
+Pentru a usura calculul in cazul imaginilor color, am ales sa stochez datele
+intr-o matrice de structuri, in care fiecare element contine valorile de tip
+UNSIGNED CHAR: red, green, blue.
+	
+
+-------------------------------------------------------------------------------
+
+
+STRUCTURI:
+	1) COLOR_PIXEL:
+		- retine 3 valori de tip UNSIGNED CHAR ce corespund valorilor
+		red, green, blue necesare pentru stocarea imaginilor color.
+	
+	2) IMAGE:
+		- este cea mai importanta structura si este primita ca
+		parametru de majoritatea functiilor din cadrul programului;
+		- contine 4 valori de tip INT ce reprezinta tipul imaginii
+		(2, 3, 5 sau 6), dimensiunile acesteia (latime si inaltime) si
+		valoarea maxima a pixelilor.
+		- structura contine atat o matrice de tip UNSIGNED CHAR,
+		necesara pentru memorarea imaginilor grayscale (.pgm),
+		cat si o matrice de tip COLOR_PIXEL, pentru memorarea
+		imaginilor color;
+		- o singura matrice este utilizata la un moment dat, iar
+		memoria necesara este alocata dinamic, in cadrul functiei LOAD.
+	
+	3) COORDINATES:
+		- contine 4 valori de tip INT ce reprezinta coordonatele alese
+		in cadrul functiilor FSELECT si SELECT_ALL.
+
+
+-------------------------------------------------------------------------------
+
+
+PARSAREA COMENZILOR:
+	- comenzile sunt citite de la tastatura cu ajutorul functieti fgets(),
+	iar parsarea comenzilor se realizeaza cu ajutorul functiei sscanf();
+	- prima parsare are loc in functia main(), cu scopul de a identifica
+	comanda primita de program (LOAD, ROTATE etc.), iar pentru comenzile cu
+	parametrii (ROTATE, SAVE) string-ul citit de la tastatura este parsat
+	inca o data in cadrul functiei respective (spre exemplu parametrii
+	necesari comenzii SELECT sunt extrasi in cadrul functiei fselect() ).
+
+
+-------------------------------------------------------------------------------
+
+
+FUNCTII PRINCIPALE:
+	
+	1) load(): 
+		- parseaza string-ul primit si deschide fisierul identificat ca
+		parametru;
+		- verifica existenta comentariilor in imagini si sare peste ele;
+		- preia o parte din variabilele ce vor fi memorate in structura
+		tip IMAGE;
+		- in functie de tipul imaginii, apeleaza functiile ce aloca
+		matricea si citesc valorile pixelilor; (Vezi FUNCTII LOAD)
+		- variabila 'loaded' devine 1 dupa incarcarea cu succes a unei
+		imagini in memorie. Valoarea acestei variabile este foarte
+		importanta pentru restul functiilor si pentru buna functionare
+		a programului. Toate functiile principale verifica valoarea lui
+		'loaded' pentru a stabili daca se afla intr-un caz de exceptie,
+		spre exemplu comanda LOAD urmata de LOAD sau ROTATE neprecedat
+		de LOAD.
+	
+	2) exit_image():
+		- elibereaza memoria alocata pentru matrice si
+		incheie programul;
+
+	3) save():
+		- salveaza starea actuala a structurii tip IMAGE intr-un fisier
+		binar sau ascii;
+		- stringul primit ca parametru este parsat cu ajutorul
+		functiei sscanf(), ce returneaza numarul parametrilor cititi
+		cu succes. Astfel putem determina usor daca parametrul
+		'ascii' este sau nu prezent.
+
+	4) fselect():
+		- memoreaza cu ajutorul structurii tip COORDINATES coordonatele
+		primite de la tastatura;
+		- sunt tratate cazurile speciale cand dimensiunile nu sunt in
+		ordine crescatoare sau cand dimensiunile sunt egale, iar aria
+		selectiei este egala cu 0.
+
+	5) select_all():
+		- incarca structura tip COORDINATES cu valorile
+		maxime posibile;
+		- functia este apelata dupa fiecare utilizare a functiei load,
+		pentru a selecta intreaga imagine incarcata.
+
+	6) rotate():
+		- verifica daca unghiul primit ca parametru este unul valid si
+		apeleaza functiile necesare rotarii fiecarui tip de imagine;
+		- am creat functii diferite pentru rotirea unei sectiuni
+		patrate grayscale sau color, cat si pentru rotirea unei
+		imagini intregi grayscale sau color. (Vezi: FUNCTII ROTATE)
+
+	7) crop():
+		- apeleaza functii diferite pentru a realiza decuparea
+		imaginii, in functie de tipul acesteia. (Vezi: FUNCTII CROP)
+
+	8) grayscale():
+		- aplica formula specificata in enunt pentru imaginile color;
+		- calculele sunt realizate cu variabile auxiliare de tip double
+		si cu ajutorul functiei aprox(). (Vezi: FUNCTII AUXILIARE)
+
+	9) sepia():
+		- aplica formula specificata in enunt pentru imaginile color;
+		- calculele sunt realizate cu variabile auxiliare de tip double
+		si cu ajutorul functiilor aprox() si f_min().
+		(Vezi: FUNCTII AUXILIARE)
+
+
+-------------------------------------------------------------------------------
+
+
+FUNCTII LOAD:
+	
+	1) load_P2() si load_P3():
+		- aloca memorie pentru stocarea matricei de tip UNSIGNED CHAR
+		din structura tip IMAGE necesara memorarii unei imagini
+		grayscale;
+		- citesc pixel-ii din fisierul deschis de functia load();
+		- citesc imagini de tip P2 (ascii), respectiv imagini de tip
+		P3 (binar).		
+
+	2) load_P5() si load_P6():
+		- aloca memorie pentru stocarea matricei de tip COLOR_PIXEL din
+		structura tip IMAGE necesara memorarii unei imagini colo.
+		- citesc pixel-ii din fisierul deschis de functia load();
+		- primeste 3 valori (red, green, blue) pentru fiecare element
+		al matricei;
+		- citeste imagini de tip P5 (ascii), respectiv imagini de tip
+		P6 (binar).
+
+
+-------------------------------------------------------------------------------
+
+
+FUNCTII ROTATE:
+
+	1) rotate_matrix_gray() si rotate_matrix_rgb():
+		- rotesc zona din matrice delimitata de coordonatele primite
+		cu ajutorul unei matrice auxiliare, alocata dinamic;
+		- matricea auxiliara preia valorile rotite la un unghi de
+		90 de grade in sens orar si suprascrie zona din
+		matricea initiala;
+		- elibereaza memoria alocata pentru matricea auxiliara;
+		- este utilizata o matrice de tip UNSIGNED CHAR pentru imaginea
+		grayscale si o matrice de tip COLOR_PIXEL pentru imaginea color.
+
+	2) rotate_matrix_rect_gray() si rotate_matrix_rect_color():
+		- rotesc intreaga matrice cu ajutorul unei matrice auxiliare,
+		alocata dinamic;
+		- matricea auxiliara preia valorile rotite la un unghi de
+		90 de grade in sens orar;
+		- memoria alocata matricei initiale este eliberata si realocata
+		cu dimensiunile noi (inaltimea devine latime si invers);
+		- elibereaza memoria alocata pentru matricea auxiliara;
+		- este utilizata o matrice de tip UNSIGNED CHAR pentru imaginea
+		grayscale si o matrice de tip COLOR_PIXEL pentru
+		imaginea color;
+		- este selectata intreaga imagine cu ajutorul functiei
+		select_all_basic (Vezi FUNCTII AUXILIARE).
+
+
+-------------------------------------------------------------------------------
+
+
+FUCNTII CROP:
+
+	1) crop_gray() si crop_rgb():
+		- decupeaza zona din matrice delimitata de coordonatele primite
+		cu ajutorul unei matrice auxiliare alocata dinamic;
+		- memoria alocata matricei initiale este eliberata si realocata
+		cu dimensiunile noi;
+		- sunt actualizate dimensiunile imaginii in structura tip IMAGE;
+		- matricea actualizata preia valorile matricei auxiliare, iar
+		memoria alocata pentru matricea auxiliara este eliberata;
+		- este utilizata o matrice de tip UNSIGNED CHAR pentru imaginea
+		grayscale si o matrice de tip COLOR_PIXEL pentru
+		imaginea color;
+		- este selectata intreaga imagine cu ajutorul functiei
+		select_all_basic (Vezi FUNCTII AUXILIARE).
+
+
+-------------------------------------------------------------------------------
+
+
+FUNCTII AUXILIARE:
+	
+	1) swap():
+		- swap cu pointeri.
+	
+	2) f_min():
+		- returneaza minimul dintre doua variabile INT.
+	
+	3) aprox():
+		- aproximeaza un numar de tip DOUBLE la cel mai apropiat
+		intreg;
+		- functia este necesara pentru comenzile GRAYSCALE si SEPIA.
+
+	4) select_all_basic():
+		- incarca in structura de tip COORDINATES coordonatele imaginii
+		(selecteaza intreaga imagine);
+		- functia este necesara pentru comenzile LOAD, ROTATE, CROP.
